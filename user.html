@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>2D-Cashier — прототип</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+  :root{ --ink:#0E1633; --ink2:#16203F; --surface:#FAFAF7; --gold:#F5A623; --coral:#FF6B4A; --teal:#1FB6A6; --green:#2ECC71; --muted:#8A93A6; --line:#EFEDE6; --b:#E6E4DC; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; background:#cfcdc4; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif; }
+  .stage{ display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:14px; }
+  .device{ width:390px; height:830px; background:#000; border-radius:52px; padding:8px; }
+  .app{ position:relative; width:100%; height:100%; background:var(--surface); border-radius:44px; overflow:hidden; display:flex; flex-direction:column; }
+  @media (max-width:470px){ .stage{padding:0;} .device{width:100vw;height:100vh;border-radius:0;padding:0;} .app{border-radius:0;} }
+  .appHeader{ background:var(--ink); padding:40px 16px 12px; flex:none; display:flex; align-items:center; gap:11px; }
+  .appHeader .logo{ width:36px;height:36px;border-radius:10px;background:#5A3A2E;display:flex;align-items:center;justify-content:center;color:#fff; }
+  .appHeader .nm{ font-size:14px;font-weight:500;color:#FAFAF7; } .appHeader .rl{ font-size:10px;color:var(--muted); }
+  .content{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; }
+  .screen{ display:none; flex:1; flex-direction:column; } .screen.on{ display:flex; } .pad{ padding:13px 13px 18px; }
+  .subbar{ display:flex; align-items:center; gap:10px; padding:10px 13px; border-bottom:0.5px solid var(--line); background:#fff; } .subbar i{ font-size:20px; color:var(--ink); cursor:pointer; } .subbar b{ font-size:14px; font-weight:500; flex:1; }
+  .appFooter{ display:grid; grid-template-columns:repeat(4,1fr); align-items:center; padding:9px 6px calc(14px + env(safe-area-inset-bottom,0)); border-top:0.5px solid var(--line); background:var(--surface); flex:none; }
+  .fbtn{ text-align:center; color:var(--muted); font-size:19px; cursor:pointer; } .fbtn .fl{ font-size:9px; display:block; margin-top:2px; } .fbtn.active{ color:var(--gold); }
+  .row{ display:flex; align-items:center; gap:11px; } .ic{ display:flex; align-items:center; justify-content:center; border-radius:10px; flex:none; }
+  .card{ background:#fff; border:0.5px solid var(--b); border-radius:13px; }
+  .muted{ color:var(--muted); } .lbl{ font-size:11px; color:var(--muted); }
+  .btn{ text-align:center; font-size:13px; font-weight:500; padding:12px; border-radius:11px; margin-top:8px; cursor:pointer; }
+  .key{ background:#fff; border:0.5px solid var(--b); border-radius:10px; padding:15px 0; text-align:center; font-size:20px; color:var(--ink); cursor:pointer; user-select:none; }
+  .pm{ display:flex; align-items:center; gap:9px; border:0.5px solid var(--b); border-radius:11px; padding:11px 13px; font-size:13px; margin-bottom:8px; cursor:pointer; } .pm.on{ border-color:var(--ink); background:var(--ink); color:#fff; }
+  .av{ width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex:none; }
+  .lrow{ display:flex; align-items:center; gap:11px; padding:11px 2px; border-bottom:0.5px solid var(--line); cursor:pointer; }
+  .bubble{ max-width:80%; padding:8px 11px; font-size:12.5px; color:var(--ink); }
+  .bin{ align-self:flex-start; background:#fff; border-radius:13px 13px 13px 4px; }
+  .bout{ align-self:flex-end; background:#DCEEFA; border-radius:13px 13px 4px 13px; }
+</style>
+</head>
+<body>
+<div class="stage"><div class="device"><div class="app">
+
+  <div class="appHeader">
+    <div class="logo"><i class="ti ti-coffee"></i></div>
+    <div style="flex:1;min-width:0;"><div class="nm">2D-Cashier · Fermachi</div><div class="rl">Касса · Сегизбаев Э · смена открыта</div></div>
+  </div>
+
+  <div class="content">
+
+    <!-- TERMINAL -->
+    <div class="screen on" id="s-terminal"><div class="pad" style="flex:1;display:flex;flex-direction:column;">
+      <div style="text-align:center;margin:8px 0 14px;"><div class="lbl">Сумма к оплате</div><div id="amt" style="font-size:40px;font-weight:500;color:var(--ink);">0 ₸</div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div class="key" onclick="dg('1')">1</div><div class="key" onclick="dg('2')">2</div><div class="key" onclick="dg('3')">3</div>
+        <div class="key" onclick="dg('4')">4</div><div class="key" onclick="dg('5')">5</div><div class="key" onclick="dg('6')">6</div>
+        <div class="key" onclick="dg('7')">7</div><div class="key" onclick="dg('8')">8</div><div class="key" onclick="dg('9')">9</div>
+        <div class="key" onclick="dg('00')">00</div><div class="key" onclick="dg('0')">0</div><div class="key" onclick="bk()"><i class="ti ti-backspace"></i></div>
+      </div>
+      <div class="btn" style="background:var(--gold);color:#412402;margin-top:14px;" onclick="showPayQR()"><i class="ti ti-qrcode"></i> Показать QR для оплаты</div>
+      <div class="lbl" style="text-align:center;margin-top:8px;cursor:pointer;" onclick="toScan()">или сканировать клиента вручную</div>
+      <div class="lbl" style="text-align:center;margin-top:10px;cursor:pointer;color:var(--ink);" onclick="redeemScan()"><i class="ti ti-ticket"></i> Гасить купон клиента</div>
+    </div></div>
+
+    <!-- PAY QR (клиент сканирует) -->
+    <div class="screen" id="s-payqr">
+      <div class="subbar"><i class="ti ti-chevron-left" onclick="navTop('terminal')"></i><b>QR для оплаты</b></div>
+      <div class="pad" style="text-align:center;">
+        <div class="lbl">К оплате</div>
+        <div id="qrAmt" style="font-size:30px;font-weight:500;color:var(--ink);margin-bottom:14px;">0 ₸</div>
+        <canvas id="payqr" width="210" height="210" style="margin:0 auto;border-radius:12px;display:block;background:#fff;"></canvas>
+        <div id="qrStatus" class="lbl" style="margin-top:14px;">клиент сканирует этот QR в своём приложении и оплачивает…</div>
+      </div>
+    </div>
+
+    <!-- SCAN -->
+    <div class="screen" id="s-scan">
+      <div class="subbar"><i class="ti ti-chevron-left" onclick="stopScanBack()"></i><b>Скан QR клиента</b></div>
+      <div class="pad">
+        <div class="lbl" style="margin-bottom:8px;">Сумма: <b id="sAmt" style="color:var(--ink);">0 ₸</b></div>
+        <div id="reader" style="width:100%;border-radius:14px;overflow:hidden;background:#0E1633;min-height:240px;"></div>
+        <div id="scanMsg" class="lbl" style="text-align:center;margin-top:10px;">наведите камеру на QR клиента</div>
+        <div class="btn" style="border:0.5px solid var(--b);color:var(--ink);" onclick="showList()"><i class="ti ti-list"></i> Выбрать из списка</div>
+      </div>
+    </div>
+
+    <!-- CLIENT LIST -->
+    <div class="screen" id="s-client">
+      <div class="subbar"><i class="ti ti-chevron-left" onclick="navTop('terminal')"></i><b>Клиент</b></div>
+      <div class="pad">
+        <div class="lbl" style="margin-bottom:8px;">Сумма: <b id="cAmt" style="color:var(--ink);">0 ₸</b> · выбери клиента (скан QR)</div>
+        <div id="clientList"></div>
+      </div>
+    </div>
+
+    <!-- ORDER + CHAT -->
+    <div class="screen" id="s-order">
+      <div class="subbar"><i class="ti ti-chevron-left" onclick="navBack()"></i><b id="oName">Клиент</b><span style="font-size:11px;color:var(--green);background:#10261C;padding:3px 9px;border-radius:20px;">● открыт</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;background:#0E1633;color:#fff;padding:9px 14px;"><span style="font-size:11px;color:var(--muted);">Текущий счёт</span><span id="oAmt" style="font-size:16px;font-weight:500;color:var(--gold);">0 ₸</span></div>
+      <div style="flex:1;overflow-y:auto;padding:13px 12px;background:#F1EFE8;display:flex;flex-direction:column;gap:9px;">
+        <div class="bubble bin">Здравствуйте! Готовлю ваш заказ ☕</div>
+        <div class="bubble bout">Оплачу из кошелька TooDee</div>
+        <div style="align-self:center;font-size:10px;color:var(--muted);">чат активен, пока счёт открыт</div>
+      </div>
+      <div style="padding:9px 11px;background:var(--surface);border-top:0.5px solid var(--b);">
+        <div class="row" style="gap:8px;margin-bottom:9px;"><div style="flex:1;background:#fff;border:0.5px solid var(--b);border-radius:20px;padding:8px 13px;font-size:12px;color:var(--muted);">Сообщение…</div><div style="width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--gold);display:flex;align-items:center;justify-content:center;"><i class="ti ti-send"></i></div></div>
+        <div class="btn" style="background:var(--green);color:#0a3d1f;margin:0;" onclick="go('pay')"><i class="ti ti-cash"></i> К оплате</div>
+      </div>
+    </div>
+
+    <!-- PAY -->
+    <div class="screen" id="s-pay">
+      <div class="subbar"><i class="ti ti-chevron-left" onclick="navBack()"></i><b id="pName">Оплата</b></div>
+      <div class="pad">
+        <div style="text-align:center;margin:4px 0 14px;"><div class="lbl">К оплате</div><div id="pAmt" style="font-size:32px;font-weight:500;color:var(--ink);">0 ₸</div></div>
+        <div class="lbl" style="margin-bottom:7px;">Способ оплаты</div>
+        <div class="pm on"><i class="ti ti-wallet"></i> Кошелёк ₸ (TooDee)</div>
+        <div class="pm"><i class="ti ti-qrcode"></i> Kaspi QR</div>
+        <div class="pm"><i class="ti ti-building-bank"></i> Halyk / карта</div>
+        <div id="pCash" style="background:#FFF1EC;border-radius:10px;padding:9px 11px;font-size:11px;color:#993C1D;line-height:1.5;margin-top:6px;">кэшбэк рассчитается по карте клиента</div>
+        <div class="btn" style="background:var(--green);color:#0a3d1f;" onclick="payNow(this)"><i class="ti ti-check"></i> Принять оплату</div>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="screen" id="s-success"><div class="pad" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+      <div style="width:72px;height:72px;border-radius:50%;background:#E7F7EE;color:var(--green);display:flex;align-items:center;justify-content:center;font-size:38px;margin-bottom:14px;"><i class="ti ti-check"></i></div>
+      <div style="font-size:18px;font-weight:500;">Оплачено · <span id="okAmt">0 ₸</span></div>
+      <div class="lbl" style="margin-top:6px;">Фискальный чек отправлен</div>
+      <div class="card" style="padding:12px 16px;margin-top:16px;font-size:13px;width:100%;">
+        <div class="row" style="justify-content:space-between;padding:3px 0;"><span class="muted">Клиент</span><span id="okName" style="font-weight:500;">—</span></div>
+        <div class="row" style="justify-content:space-between;padding:3px 0;"><span class="muted">Начислено кэшбэк</span><span id="okCash" style="color:var(--coral);font-weight:500;">—</span></div>
+      </div>
+      <div class="btn" style="background:var(--ink);color:var(--gold);width:100%;" onclick="newBill()"><i class="ti ti-plus"></i> Новый счёт</div>
+    </div></div>
+
+    <!-- COUPON REDEEM -->
+    <div class="screen" id="s-coupon">
+      <div class="subbar"><i class="ti ti-chevron-left" onclick="navTop('terminal')"></i><b>Купон</b></div>
+      <div class="pad" id="couponBody"></div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="screen" id="s-orders"><div class="pad">
+      <div style="font-size:15px;font-weight:500;margin-bottom:10px;">Заказы</div>
+      <div class="lbl" style="margin:2px 0 6px;">Закрытые (смена)</div>
+      <div id="ordersList" class="lbl">пока пусто — проведи первую оплату</div>
+    </div></div>
+
+    <!-- CHATS -->
+    <div class="screen" id="s-chats"><div class="pad">
+      <div style="font-size:15px;font-weight:500;margin-bottom:10px;">Чаты</div>
+      <div class="lrow" onclick="go('order')"><div class="av" style="background:#5A6175;">К</div><div style="flex:1;"><div style="font-size:14px;font-weight:500;">Активный счёт</div><div class="lbl">чат при открытом заказе</div></div><span style="font-size:10px;color:var(--green);">●</span></div>
+      <div class="lrow" style="border:none;"><div class="av" style="background:#0F6E56;">МБ</div><div style="flex:1;"><div style="font-size:14px;font-weight:500;">Марат Б · доставка</div><div class="lbl">Я у подъезда, 2-й этаж</div></div><span style="font-size:10px;color:#185FA5;"><i class="ti ti-truck-delivery"></i></span></div>
+    </div></div>
+
+    <!-- PROFILE -->
+    <div class="screen" id="s-profile"><div class="pad">
+      <div class="row" style="gap:12px;margin-bottom:14px;"><div class="av" style="background:#185FA5;">СЭ</div><div><div style="font-size:16px;font-weight:500;">Сегизбаев Э</div><div class="lbl">Кассир · Fermachi</div></div></div>
+      <div class="lrow"><i class="ti ti-building-store" style="color:#5A3A2E;"></i><span style="flex:1;font-size:14px;">Точка · Достык 132</span><i class="ti ti-chevron-right muted"></i></div>
+      <div class="lrow"><i class="ti ti-clock-play" style="color:#0F6E56;"></i><span style="flex:1;font-size:14px;">Смена открыта · 09:00</span><span class="lbl">закрыть</span></div>
+      <div class="lrow" style="border:none;"><i class="ti ti-logout" style="color:#993C1D;"></i><span style="flex:1;font-size:14px;">Выход</span></div>
+    </div></div>
+
+  </div>
+
+  <div class="appFooter" id="ftr">
+    <div class="fbtn active" id="f-terminal" onclick="navTop('terminal')"><i class="ti ti-cash-register"></i><span class="fl">Оплата</span></div>
+    <div class="fbtn" id="f-orders" onclick="navTop('orders')"><i class="ti ti-receipt"></i><span class="fl">Заказы</span></div>
+    <div class="fbtn" id="f-chats" onclick="navTop('chats')"><i class="ti ti-messages"></i><span class="fl">Чаты</span></div>
+    <div class="fbtn" id="f-profile" onclick="navTop('profile')"><i class="ti ti-user"></i><span class="fl">Профиль</span></div>
+  </div>
+
+</div></div></div>
+<script type="module">
+  const SUPABASE_URL  = 'https://ljrnmanzgupgveoyvocs.supabase.co';
+  const SUPABASE_ANON = 'sb_publishable_u2lPvxEVujuT_Qpdm-h8qg_AmTqGpMb';
+  const MERCHANT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'; // Fermachi
+  const fmt = n => Number(n||0).toLocaleString('ru-RU') + ' ₸';
+  const $ = id => document.getElementById(id);
+
+  let sb=null;
+  if (SUPABASE_URL.startsWith('http')) {
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+  }
+  let QRG=null; import('https://esm.sh/qrcode@1').then(m=>QRG=m.default).catch(()=>{});
+  let pollTimer=null;
+  window.showPayQR=async ()=>{
+    if(amount<=0){ flashAmt(); return; }
+    $('qrAmt').textContent=fmt(amount); go('payqr');
+    const payload='td:pay:'+MERCHANT_ID+':'+amount;
+    if(QRG) QRG.toCanvas($('payqr'), payload, {width:210, margin:1});
+    $('qrStatus').textContent='клиент сканирует этот QR в своём приложении и оплачивает…';
+    clearInterval(pollTimer);
+    if(sb){
+      const since=new Date(Date.now()-120000).toISOString();
+      pollTimer=setInterval(async ()=>{
+        const { data } = await sb.from('txn').select('id').eq('to_kind','merchant').eq('to_id',MERCHANT_ID).eq('kind','purchase').eq('amount',amount).gte('ts',since).limit(1);
+        if(data && data.length){ clearInterval(pollTimer); showPaid(amount,'Чек отправлен'); }
+      }, 2500);
+    }
+  };
+
+  // ---- состояние ----
+  let amount = 0;            // введённая сумма
+  let client = null;         // {id,name,av,pct}
+  let cur='terminal', hist=[];
+
+  function render(){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+    ($('s-'+cur)||{}).classList && $('s-'+cur).classList.add('on');
+    ['f-terminal','f-orders','f-chats','f-profile'].forEach(i=>$(i).classList.remove('active'));
+    const map={terminal:'f-terminal',payqr:'f-terminal',scan:'f-terminal',client:'f-terminal',order:'f-terminal',pay:'f-terminal',success:'f-terminal',coupon:'f-terminal',orders:'f-orders',chats:'f-chats',profile:'f-profile'};
+    if(map[cur]) $(map[cur]).classList.add('active');
+    document.querySelector('.content').scrollTop=0;
+  }
+  window.go=(id)=>{ if(id!==cur){ hist.push(cur); cur=id; render(); } };
+  window.navTop=(id)=>{ hist=[]; cur=id; render(); };
+  window.navBack=()=>{ if(hist.length){ cur=hist.pop(); render(); } else navTop('terminal'); };
+
+  // ---- numpad ----
+  window.dg=(d)=>{ amount = Math.min(Number(String(amount)+d), 99999999); $('amt').textContent=fmt(amount); };
+  window.bk=()=>{ amount = Math.floor(amount/10); $('amt').textContent=fmt(amount); };
+
+  // ---- выбор клиента ----
+  window.toClients=async ()=>{
+    if(amount<=0){ $('amt').style.color='#EB5757'; setTimeout(()=>$('amt').style.color='',600); return; }
+    $('cAmt').textContent=fmt(amount);
+    go('client');
+    if(!sb){ $('clientList').innerHTML='<div class="lbl">Supabase не настроен</div>'; return; }
+    $('clientList').innerHTML='<div class="lbl">Загрузка…</div>';
+    const { data:users } = await sb.from('users').select('id,name');
+    const { data:subs }  = await sb.from('card_subscriptions').select('user_id,cards(cashback_pct,merchant_id)').eq('active',true);
+    const pct={}; (subs||[]).forEach(s=>{ if(s.cards && s.cards.merchant_id===MERCHANT_ID) pct[s.user_id]=Math.max(pct[s.user_id]||0, Number(s.cards.cashback_pct)); });
+    $('clientList').innerHTML = (users||[]).map(u=>{
+      const ini=u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const p=pct[u.id]||0;
+      return `<div class="lrow" onclick="pick('${u.id}','${u.name.replace(/'/g,"")}','${ini}',${p})">
+        <div class="av" style="background:#5A6175;">${ini}</div>
+        <div style="flex:1;"><div style="font-size:14px;font-weight:500;">${u.name}</div>
+        <div class="lbl">${p? 'карта '+p+'% кэшбэк':'без карты'}</div></div>
+        <i class="ti ti-chevron-right muted"></i></div>`;
+    }).join('');
+  };
+  window.pick=(id,name,av,p)=>{
+    client={id,name,av,pct:p};
+    $('oName').textContent=name; $('oAmt').textContent=fmt(amount);
+    $('pName').textContent='Оплата · '+name; $('pAmt').textContent=fmt(amount);
+    const cash=Math.round(amount*p/100), tdb=(cash/1000).toFixed(2).replace('.',',');
+    $('pCash').innerHTML = p ? `При оплате: кэшбэк <b>+${cash.toLocaleString('ru-RU')} ₸ → ${tdb} TDB</b>` : 'У клиента нет карты — кэшбэк не начисляется';
+    go('order');
+  };
+
+  // ---- оплата ----
+  window.payNow=async (btn)=>{
+    if(!client) return;
+    if(sb){
+      btn.textContent='⏳ Проводим…';
+      const { error } = await sb.rpc('fn_purchase',{ p_user:client.id, p_merchant:MERCHANT_ID, p_amount:amount, p_method:'wallet' });
+      if(error){ alert('Ошибка: '+error.message); btn.innerHTML='<i class="ti ti-check"></i> Принять оплату'; return; }
+      btn.innerHTML='<i class="ti ti-check"></i> Принять оплату';
+    }
+    const cash=Math.round(amount*(client.pct||0)/100), tdb=(cash/1000).toFixed(2).replace('.',',');
+    $('okAmt').textContent=fmt(amount); $('okName').textContent=client.name;
+    $('okCash').textContent = client.pct ? `+${cash.toLocaleString('ru-RU')} ₸ → ${tdb} TDB` : '—';
+    go('success');
+  };
+  window.newBill=()=>{ amount=0; client=null; $('amt').textContent=fmt(0); navTop('terminal'); };
+
+  // ---- сканер камеры ----
+  let h5=null, scanning=false;
+  function flashAmt(){ $('amt').style.color='#EB5757'; setTimeout(()=>$('amt').style.color='',600); }
+  window.toScan=async ()=>{
+    if(amount<=0){ flashAmt(); return; }
+    $('sAmt').textContent=fmt(amount); go('scan'); $('scanMsg').textContent='наведите камеру на QR клиента';
+    try{
+      const { Html5Qrcode } = await import('https://esm.sh/html5-qrcode');
+      $('reader').innerHTML=''; h5=new Html5Qrcode('reader'); scanning=true;
+      await h5.start({facingMode:'environment'},{fps:10,qrbox:220},
+        async (txt)=>{ await stopScanner(); await onScanned(String(txt).trim()); }, ()=>{});
+    }catch(e){ $('scanMsg').textContent='Камера недоступна — нажми «Выбрать из списка». '+(e.message||e); }
+  };
+  async function stopScanner(){ if(h5&&scanning){ try{ await h5.stop(); }catch(e){} scanning=false; } }
+  window.stopScanBack=async ()=>{ await stopScanner(); navTop('terminal'); };
+  window.showList=async ()=>{ await stopScanner(); toClients(); };
+  async function onScanned(id){
+    let name='Клиент', ini='К', p=0;
+    if(sb){
+      const { data:u } = await sb.from('users').select('name').eq('id',id).maybeSingle();
+      if(u){ name=u.name; ini=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+      const { data:subs } = await sb.from('card_subscriptions').select('user_id,cards(cashback_pct,merchant_id)').eq('active',true).eq('user_id',id);
+      (subs||[]).forEach(s=>{ if(s.cards&&s.cards.merchant_id===MERCHANT_ID) p=Math.max(p,Number(s.cards.cashback_pct)); });
+    }
+    pick(id,name,ini,p);
+  }
+
+  function beep(){ try{ const A=window.AudioContext||window.webkitAudioContext; const a=new A(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.setValueAtTime(880,a.currentTime); g.gain.setValueAtTime(0.18,a.currentTime); o.frequency.setValueAtTime(1175,a.currentTime+0.13); g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.45); o.start(); o.stop(a.currentTime+0.46);}catch(e){} }
+  window.showPaid=(amount,sub)=>{ beep(); document.getElementById('paidAmt').textContent=Number(amount).toLocaleString('ru-RU')+' ₸'; document.getElementById('paidSub').textContent=sub||''; document.getElementById('paidOverlay').style.display='flex'; };
+  window.closePaid=()=>{ document.getElementById('paidOverlay').style.display='none'; };
+  window.redeemScan=async ()=>{ $('sAmt').textContent='купон'; $('scanMsg').textContent='наведите камеру на QR купона'; go('scan');
+    try{ const {Html5Qrcode}=await import('https://esm.sh/html5-qrcode'); $('reader').innerHTML=''; h5=new Html5Qrcode('reader'); scanning=true;
+      await h5.start({facingMode:'environment'},{fps:10,qrbox:220},async (t)=>{ await stopScanner(); onCoupon(String(t).trim()); },()=>{}); }
+    catch(e){ $('scanMsg').textContent='Камера недоступна. '+(e.message||e); } };
+  async function onCoupon(code){ const p=code.split(':'); if(p[0]!=='td'||p[1]!=='coupon'){ $('scanMsg').textContent='Это не QR купона'; return; }
+    const id=p[2]; go('coupon'); const body=$('couponBody'); body.innerHTML='<div class="lbl">Загрузка…</div>'; if(!sb){ body.innerHTML='<div class="lbl">нет подключения</div>'; return; }
+    const {data:c}=await sb.from('coupons').select('id,status,offer_id,user_id').eq('id',id).maybeSingle();
+    if(!c){ body.innerHTML='<div class="lbl">Купон не найден</div>'; return; }
+    const {data:o}=await sb.from('offers').select('name').eq('id',c.offer_id).maybeSingle();
+    const {data:u}=await sb.from('users').select('name').eq('id',c.user_id).maybeSingle();
+    const red=c.status==='redeemed';
+    body.innerHTML='<div class="card" style="padding:14px;"><div class="row" style="gap:11px;"><div class="ic" style="width:40px;height:40px;background:#E6F1FB;color:#185FA5;"><i class="ti ti-ticket"></i></div><div style="flex:1;"><div style="font-size:15px;font-weight:500;">'+((o&&o.name)||'Купон')+'</div><div class="lbl">клиент: '+((u&&u.name)||'—')+'</div></div></div><div class="row" style="justify-content:space-between;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--line);"><span class="lbl">статус</span><span style="font-size:13px;font-weight:500;color:'+(red?'#993C1D':'#0F6E56')+';">'+(red?'уже погашен':'активен')+'</span></div></div>'+(red?'':'<div class="btn" style="background:var(--green);color:#0a3d1f;" onclick="redeemCoupon(\''+id+'\')"><i class="ti ti-check"></i> Погасить купон</div>');
+  }
+  window.redeemCoupon=async (id)=>{ if(sb){ const {error}=await sb.from('coupons').update({status:'redeemed'}).eq('id',id).eq('status','issued'); if(error){ alert('Ошибка: '+error.message); return; } } beep(); $('couponBody').innerHTML='<div class="card" style="padding:20px;text-align:center;"><div style="color:#2ECC71;font-size:44px;"><i class="ti ti-circle-check"></i></div><div style="font-weight:500;margin-top:8px;">Купон погашён</div></div>'; };
+  render();
+</script>
+<div id="paidOverlay" onclick="closePaid()" style="display:none;position:fixed;inset:0;background:#2ECC71;color:#fff;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:30px;cursor:pointer;"><i class="ti ti-circle-check" style="font-size:96px;"></i><div style="font-size:22px;font-weight:500;margin-top:14px;">Оплата получена</div><div id="paidAmt" style="font-size:42px;font-weight:600;margin-top:6px;">0 ₸</div><div id="paidSub" style="font-size:14px;opacity:.85;margin-top:8px;"></div><div style="margin-top:26px;background:rgba(255,255,255,.22);padding:12px 30px;border-radius:24px;font-size:15px;font-weight:500;">Готово</div></div>
+</body>
+</html>
